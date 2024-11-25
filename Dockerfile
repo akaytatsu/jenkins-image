@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM jenkins/jenkins:lts
+FROM jenkins/jenkins:jdk17
 
 USER root
 
@@ -8,6 +8,7 @@ USER root
 RUN apt-get update -y && apt-get install -y \
     bash \
     curl \
+    wget \
     jq \
     git \
     make \
@@ -26,8 +27,16 @@ RUN python3 -m venv /opt/venv
 RUN /opt/venv/bin/pip install --upgrade pip && \
     /opt/venv/bin/pip install awscli boto3
 
+RUN mkdir -p /opt/sonar/ \
+    && wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610.zip -O /opt/sonar/sonar-scanner.zip \
+    && unzip /opt/sonar/sonar-scanner.zip -d /opt/sonar \
+    && mv /opt/sonar/sonar-scanner-6.2.1.4610/* /opt/sonar \
+    && rmdir /opt/sonar/sonar-scanner-6.2.1.4610/ \
+    && rm /opt/sonar/sonar-scanner.zip \
+    && chmod +x /opt/sonar/bin/sonar-scanner
+
 # Adiciona o ambiente virtual ao PATH
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:/opt/sonar/bin:$PATH"
 
 # Instala o kubectl
 RUN curl -LO "https://dl.k8s.io/release/v1.21.2/bin/linux/amd64/kubectl" \
